@@ -5,7 +5,7 @@
 
 #include <include/serial_debug.h>
 
-#define DEBUG_CLO2_PROCESS
+// #define DEBUG_CLO2_PROCESS
 
 String system_op_states_str[4] =
 {

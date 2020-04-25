@@ -205,12 +205,6 @@ String extract_command(String _raw_command)
       // turn off system
       current_system_state = false;
     }
-#ifdef DEBUG_RULEBLOX_MQTT
-    // debug
-    serial_debug_print("SYSTEM TOGLLED: ");
-    serial_debug_print(String(current_system_state));
-    serial_debug_println(" ************ ");
-#endif
     // do nothing if an unknown command is issued
     current_trigger_source = TRIG_MQTT;
     _buffer = build_payload( toggle_system_command, _toggle_system );
@@ -328,13 +322,18 @@ void process_mqtt_command(void)
 void mqtt_loop(void)
 {
   if (mqtt_connected()) {
-      client.loop();
+      client.loop();  
+      mqtt_subscribe();
   }
   else
   {
+#ifdef DEBUG_RULEBLOX_MQTT
+    // debug
+    serial_debug_print("hit this point");
+#endif     
     // try to 
     mqtt_connect_with_retries();
-
+    mqtt_subscribe();
   }
 }
 
@@ -342,13 +341,13 @@ void mqtt_connect_with_retries(void)
 {
   for ( int i = 0; i < 20; i++) // take 20 seconds to reconnect?
   {
-    mqtt_connect();
 #ifdef DEBUG_RULEBLOX_MQTT
     // debug
     serial_debug_print("Connection attempt: ");
     serial_debug_print(String(i));
     serial_debug_println(" .......");
 #endif
+    mqtt_connect();
     if (mqtt_connected()) break;
     // delay(ONE_SECOND);
   }
@@ -356,8 +355,8 @@ void mqtt_connect_with_retries(void)
 
 void mqtt_process(void)
 {
-  process_mqtt_command();
   mqtt_loop();
+  process_mqtt_command();
 }
 
 String get_mqtt_topic(void)

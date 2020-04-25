@@ -2,7 +2,7 @@
 #include <include/clo2_device.h>
 #include <include/serial_debug.h>
 
-#define DEBUG_CLO2_DEVICE
+// #define DEBUG_CLO2_DEVICE
 
 // variables
 String device_id = "null";
