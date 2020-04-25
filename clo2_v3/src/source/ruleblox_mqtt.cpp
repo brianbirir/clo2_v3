@@ -15,7 +15,7 @@ String topic_root = "project/clo2/device/";
 String command = "/command";
 String device_data = "/device_data";
 
-bool process_command_flag = false;
+volatile bool process_command_flag = false;
 String command_to_process;
 
 uint32_t command_counter = 0;
@@ -34,9 +34,9 @@ String false_ = "false";
 extern String device_id;
 extern unsigned long ONE_SECOND;
 extern unsigned long ONE_MIN;
-extern bool current_system_state;
-extern unsigned long prep_time;
-extern unsigned long chlorination_time;
+extern volatile bool current_system_state;
+extern volatile unsigned long prep_time;
+extern volatile unsigned long chlorination_time;
 
 /* mqtt functions */
 void mqtt_callback(char* topic, byte* payload, unsigned int length);

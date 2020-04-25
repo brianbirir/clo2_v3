@@ -22,20 +22,20 @@ enum system_op_states
   AFTERMATH
 };
 
-int current_system_op_state = IDLE;
+int current_system_op_state;
 
-bool current_system_state = false;
-bool prev_system_state = false;
+volatile bool current_system_state;
+volatile bool prev_system_state;
 
 extern unsigned long ONE_SECOND; // in mS
 extern unsigned long ONE_MIN;
 
 
-unsigned long system_timer = 0;
-unsigned long default_time = ONE_MIN;
-unsigned long prep_time = default_time;
-unsigned long chlorination_time = default_time;
-unsigned long aftermath_time = ONE_SECOND * 15; // take 15 seconds to cool down
+volatile unsigned long system_timer;
+unsigned long default_time;
+volatile unsigned long prep_time;
+volatile unsigned long chlorination_time;
+unsigned long aftermath_time;
 
 unsigned long status_counter = 0;
 
@@ -56,35 +56,30 @@ extern String false_;
 /* local functions */
 bool clo2_process_system_state_change_publisher(void);
 bool clo2_process_publish_data(void);
+void clo2_process_state_monitor(void);
+void clo2_process_state_change_monitor(void);
 
 void clo2_process_state_change_monitor(void)
 {
-  if ( (current_system_state == true) && (prev_system_state == false) ) {
-    prev_system_state = current_system_state;
-    // send notification
-    clo2_process_system_state_change_publisher();
-    // start system timer
-    system_timer = millis();
-  }
-
-  if ( (current_system_state == false) && (prev_system_state == true) ) {
-    prev_system_state = current_system_state;
-    // send notification
-    clo2_process_system_state_change_publisher();
-    // start system timer
-    system_timer = millis();
-  }
-
-#ifdef DEBUG_CLO2_PROCESS
   if(current_system_state != prev_system_state)
   {
-    serial_debug_print("SYSTEM CURR STATE: ");
-    serial_debug_print(String(current_system_state));
-    serial_debug_print("SYSTEM PREV STATE: ");
-    serial_debug_println(String(prev_system_state));
-  }
-#endif
+    if ( current_system_state == true ) 
+    {
+      // send notification
+      clo2_process_system_state_change_publisher();
+      // start system timer
+      system_timer = millis();
+    }
 
+    if ( current_system_state == false ) 
+    {
+      // send notification
+      clo2_process_system_state_change_publisher();
+      // start system timer
+      system_timer = millis();
+    }
+    prev_system_state = current_system_state;
+  }
 }
 
 
@@ -125,7 +120,7 @@ void clo2_process_state_monitor(void)
       if( current_system_op_state == CHLORINATION)
       {
         // update state only once if system was in chlorination state
-        current_system_op_state = AFTERMATH_TIME;
+        current_system_op_state = AFTERMATH;
 #ifdef DEBUG_CLO2_PROCESS
         serial_debug_print("OP STATE: ");
         serial_debug_println(system_op_states_str[current_system_op_state]);
@@ -136,12 +131,34 @@ void clo2_process_state_monitor(void)
     }
     else
     {
-      // stay in or go to idle state if not in a valid time space
-      current_system_op_state = IDLE;
-      current_system_state = false;
-      // publish data
-      clo2_process_publish_data();
+      if( current_system_op_state == AFTERMATH)
+      {
+        // stay in or go to idle state if not in a valid time space
+        current_system_op_state = IDLE;
+        current_system_state = false;
+#ifdef DEBUG_CLO2_PROCESS
+        serial_debug_print("OP STATE: ");
+        serial_debug_println(system_op_states_str[current_system_op_state]);
+#endif
+        // publish data
+        clo2_process_publish_data();
+      }
+      
     }
+
+#ifdef DEBUG_CLO2_PROCESS
+    static unsigned long csc = 0;
+    static unsigned long psc = 0;
+
+    csc = (millis() - system_timer) / 1000 ;
+    if( csc != psc )
+    {
+      serial_debug_print("countdown: ");
+      serial_debug_println(String(csc));
+      psc = csc;
+    }
+        
+#endif 
   }
   else
   {
@@ -207,16 +224,50 @@ bool clo2_process_publish_data(void)
 bool clo2_process_reset_system(void)
 {
   // reset all op system variables to default
+  default_time = (ONE_SECOND * 10);
   current_system_state = false;
   prev_system_state = false;
   prep_time = default_time;
   chlorination_time = default_time;
+  aftermath_time = default_time;
   current_system_op_state = IDLE;
 
+  system_timer = 0;
   return clo2_process_publish_data();
 }
 
 void clo2_process_init(void)
 {
   clo2_process_reset_system();
+}
+
+void test_process_functions(void)
+{
+  if(Serial.available() > 0)
+  {
+    String _comm;
+    _comm = Serial.readString();
+
+    if(_comm.indexOf("start") >= 0)
+    {
+      current_system_state = true;
+    }
+    else if(_comm.indexOf("stop") >= 0)
+    {
+      current_system_state = false;
+    }
+  }
+
+  clo2_process_state_change_monitor();
+  clo2_process_state_monitor();
+
+}
+
+void clo2_process(void)
+{
+  // check state of process
+  clo2_process_state_change_monitor();
+  
+  // check system state
+  clo2_process_state_monitor(); 
 }

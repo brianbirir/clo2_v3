@@ -1,8 +1,8 @@
-
 #include "Particle.h"
 #include <include/ruleblox_mqtt.h>
 #include <include/clo2_device.h>
 #include <include/clo2_process.h>
+#include <include/clo2_peripherals.h>
 
 #include <include/serial_debug.h>
 
@@ -26,18 +26,20 @@ void setup() {
   //init process
   clo2_process_init();
 
+  // setup peripherals
+  clo2_peripheral_setup();
+
 }
 
 void loop() {
   // mqtt process run in here
   mqtt_process();
 
-  // check system state
-  clo2_process_state_monitor();
+  // system state machine
+  clo2_process();
 
-  // check state of process
-  clo2_process_state_change_monitor();
+  // tests
+  // test_process_functions();
+
 
 }
-
-
