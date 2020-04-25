@@ -322,8 +322,7 @@ void process_mqtt_command(void)
 void mqtt_loop(void)
 {
   if (mqtt_connected()) {
-      client.loop();  
-      mqtt_subscribe();
+      client.loop(); 
   }
   else
   {
