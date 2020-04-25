@@ -1,7 +1,7 @@
 #include "Particle.h"
 #include <include/serial_debug.h>
 
-#define DEBUG_CLO2
+// #define DEBUG_CLO2
 
 void serial_debug_setup(void)
 {

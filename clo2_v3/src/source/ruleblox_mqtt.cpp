@@ -5,7 +5,7 @@
 
 #include <include/serial_debug.h>
 
-#define DEBUG_RULEBLOX_MQTT
+// #define DEBUG_RULEBLOX_MQTT
 
 /* MQTT variables */
 char domain[] = "www.ruleblox.com/mqtt";
