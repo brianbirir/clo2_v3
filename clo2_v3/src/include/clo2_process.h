@@ -1,6 +1,22 @@
 #ifndef CLO2_PROCESS
 #define CLO2_PROCESS
 
+// global variables
+enum system_op_states
+{
+  IDLE,
+  PREPARATION,
+  CHLORINATION,
+  AFTERMATH
+};
+
+enum trigger_source
+{
+    TRIG_BUTTON,
+    TRIG_MQTT,
+    UNKNOWN_TRIG
+};
+
 /* external functions api */
 void clo2_process_init(void);
 bool clo2_process_reset_system(void);

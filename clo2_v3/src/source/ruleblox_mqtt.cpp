@@ -38,6 +38,9 @@ extern volatile bool current_system_state;
 extern volatile unsigned long prep_time;
 extern volatile unsigned long chlorination_time;
 
+extern trigger_source current_trigger_source;
+
+
 /* mqtt functions */
 void mqtt_callback(char* topic, byte* payload, unsigned int length);
 MQTT client(ip_address, port, mqtt_callback);
@@ -209,6 +212,7 @@ String extract_command(String _raw_command)
     serial_debug_println(" ************ ");
 #endif
     // do nothing if an unknown command is issued
+    current_trigger_source = TRIG_MQTT;
     _buffer = build_payload( toggle_system_command, _toggle_system );
     _payload_resp.concat( _buffer );
   }
@@ -256,7 +260,7 @@ String extract_command(String _raw_command)
     if( __new_chlorination_time ) // only update if the new oreo time is valid
     {
       // update chlorination time here
-      // chlorination_time = __new_chlorination_time * ONE_MIN; //TODO: restore this
+      chlorination_time = __new_chlorination_time * ONE_MIN; //TODO: restore this
       String _time = String(__new_chlorination_time);
       _buffer = build_payload( update_chlorination_time, _time );
       _payload_resp.concat( _buffer );

@@ -10,8 +10,11 @@
 // SYSTEM_THREAD(ENABLED);
 
 // global variables
+unsigned long ALWAYS_ON = 0; // in mS
+unsigned long HALF_A_SECOND = 500; // in mS
 unsigned long ONE_SECOND = 1000; // in mS
-unsigned long ONE_MIN = ONE_SECOND * 60;
+unsigned long TWO_SECONDS = 2000; // in mS
+unsigned long ONE_MIN = 60000;
 
 void setup() {
   // Initialize werial when necessary
@@ -37,6 +40,9 @@ void loop() {
 
   // system state machine
   clo2_process();
+
+  // peripheral state machine
+  clo2_peripherals_machine();
 
   // tests
   // test_process_functions();

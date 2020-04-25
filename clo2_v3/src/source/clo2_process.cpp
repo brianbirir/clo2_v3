@@ -1,6 +1,7 @@
 #include "Particle.h"
 #include <include/clo2_process.h>
 #include <include/ruleblox_mqtt.h>
+#include <include/clo2_peripherals.h>
 
 #include <include/serial_debug.h>
 
@@ -13,23 +14,21 @@ String system_op_states_str[4] =
   "CHLORINATION",
   "AFTERMATH"
 };
+system_op_states current_system_op_state;
 
-enum system_op_states
+String trigger_source_str[3] =
 {
-  IDLE,
-  PREPARATION,
-  CHLORINATION,
-  AFTERMATH
+    "TRIG_BUTTON",
+    "TRIG_MQTT",
+    "UNKNOWN_TRIG"
 };
-
-int current_system_op_state;
+volatile trigger_source current_trigger_source;
 
 volatile bool current_system_state;
 volatile bool prev_system_state;
 
 extern unsigned long ONE_SECOND; // in mS
 extern unsigned long ONE_MIN;
-
 
 volatile unsigned long system_timer;
 unsigned long default_time;
@@ -47,6 +46,7 @@ unsigned long status_counter = 0;
 String status_counter_name = "STATUS";
 String system_state_name = "SYSTEM_STATE";
 String system_op_state_name = "SYSTEM_OP_STATE";
+String trigger_source_name = "TRIGGER_SOURCE";
 
 extern String update_prep_time;
 extern String update_chlorination_time;
@@ -93,6 +93,7 @@ void clo2_process_state_monitor(void)
       {
         // update state only once if system was idle
         current_system_op_state = PREPARATION;
+        clo2_peripheral_prep_state();
 #ifdef DEBUG_CLO2_PROCESS
         serial_debug_print("OP STATE: ");
         serial_debug_println(system_op_states_str[current_system_op_state]);
@@ -107,6 +108,7 @@ void clo2_process_state_monitor(void)
       {
         // update state only once if system was in prep state
         current_system_op_state = CHLORINATION;
+        clo2_peripheral_chlorination_state();
 #ifdef DEBUG_CLO2_PROCESS
         serial_debug_print("OP STATE: ");
         serial_debug_println(system_op_states_str[current_system_op_state]);
@@ -121,6 +123,7 @@ void clo2_process_state_monitor(void)
       {
         // update state only once if system was in chlorination state
         current_system_op_state = AFTERMATH;
+        clo2_peripheral_aftermath_state();
 #ifdef DEBUG_CLO2_PROCESS
         serial_debug_print("OP STATE: ");
         serial_debug_println(system_op_states_str[current_system_op_state]);
@@ -136,6 +139,7 @@ void clo2_process_state_monitor(void)
         // stay in or go to idle state if not in a valid time space
         current_system_op_state = IDLE;
         current_system_state = false;
+        clo2_peripheral_idle_state();
 #ifdef DEBUG_CLO2_PROCESS
         serial_debug_print("OP STATE: ");
         serial_debug_println(system_op_states_str[current_system_op_state]);
@@ -163,6 +167,7 @@ void clo2_process_state_monitor(void)
   else
   {
     current_system_op_state = IDLE;
+    clo2_peripheral_idle_state();    
   }
 }
 
@@ -174,6 +179,9 @@ bool clo2_process_system_state_change_publisher(void)
   String _status;
   // start payload
   _buffer = build_payload_start(status_counter_name, status_counter);
+  _str.concat(_buffer);
+  // Add trigger source
+  _buffer = build_payload(trigger_source_name, trigger_source_str[current_trigger_source]);
   _str.concat(_buffer);
   // Add status
   _status = (current_system_state ? true_ : false_ );
@@ -238,6 +246,7 @@ bool clo2_process_reset_system(void)
 
 void clo2_process_init(void)
 {
+  current_trigger_source = UNKNOWN_TRIG;
   clo2_process_reset_system();
 }
 
