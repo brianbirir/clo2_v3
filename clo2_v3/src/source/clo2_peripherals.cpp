@@ -3,6 +3,9 @@
 
 #include <include/clo2_peripherals.h>
 #include <include/clo2_process.h>
+#include <include/serial_debug.h>
+
+// #define DEBUG_CLO2_PERIPHERALS
 
 /* local variables */
 extern unsigned long ALWAYS_ON;
@@ -39,7 +42,7 @@ unsigned long pixel_period = HALF_A_SECOND;
 unsigned long pixel_timer;
 #define GREEN 0x00FF00 // color green
 
-extern bool current_system_state;
+extern volatile bool current_system_state;
 extern trigger_source current_trigger_source;
 
 // local functions
@@ -63,9 +66,9 @@ void clo2_peripherals_setup(void);
 
 void clo2_peripherals_machine(void)
 {
+  clo2_button_processor();
   clo2_peripherals_heartbeat();
   clo2_peripherals_buzzer_handle();
-  clo2_button_processor();
   clo2_peripheral_flash_neopixel();
 }
 
@@ -97,13 +100,6 @@ void clo2_peripheral_idle_state(void)
   buzzing_state = false;
   clo2_peripherals_reset_fans();
   pixel_period = HALF_A_SECOND;
-}
-
-void clo2_peripheral_setup(void)
-{
-  clo2_peripherals_setup_buzzer();
-  clo2_peripherals_setup_on_board_led();
-  clo2_peripherals_setup_fans();
 }
 
 
@@ -205,12 +201,19 @@ void clo2_peripherals_setup_button(void)
 
 void clo2_peripherals_button_poll(void) 
 {
-  if((millis() - button_timer) > button_poll_interval) { // check button state every half a second
-    if(!digitalRead(button_pin)) { //if the button is pressed, increase button counter
+  if((millis() - button_timer) > button_poll_interval)
+  { // check button state every second
+    if(!digitalRead(button_pin)) 
+    { //if the button is pressed, increase button counter
       button_counter++;
       actionable_button_counter = button_counter;
+#ifdef DEBUG_CLO2_PERIPHERALS
+      serial_debug_print("Actionable counter: ");
+      serial_debug_println(String(actionable_button_counter));
+#endif     
     }
-    else {
+    else 
+    {
       button_counter = 0; // reset to zero
     }
     button_timer = millis(); //reset_timer;
@@ -219,16 +222,23 @@ void clo2_peripherals_button_poll(void)
 
 void clo2_peripherals_action_button_press(void) 
 { 
-  if(button_counter == 0) { //check if there has been a button press not yet actioned
-    if(actionable_button_counter < 1) {
+  if(button_counter == 0) 
+  { //check if there has been a button press not yet actioned
+    if(actionable_button_counter < 1) 
+    {
       actionable_button_counter = 0; //not held long enough, reset
     }
-    else if(actionable_button_counter >= 1) {
+    else if(actionable_button_counter >= 1) 
+    {
       current_system_state = !current_system_state; 
       current_trigger_source = TRIG_BUTTON;
       buzzer_counter = 4;
       buzzing_state = true;
       actionable_button_counter = 0; // reset actionable counter to zero
+#ifdef DEBUG_CLO2_PERIPHERALS
+      serial_debug_print("System state: ");
+      serial_debug_println(String(current_system_state));
+#endif   
     }
   }
 }

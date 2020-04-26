@@ -30,7 +30,7 @@ void setup() {
   clo2_process_init();
 
   // setup peripherals
-  clo2_peripheral_setup();
+  clo2_peripherals_setup();
 
 }
 
@@ -46,6 +46,4 @@ void loop() {
 
   // tests
   // test_process_functions();
-
-
 }

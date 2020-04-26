@@ -2,7 +2,7 @@
 #define CLO2_PERIPHERALS
 
 /* Peripheral external function API */
-void clo2_peripheral_setup(void);
+void clo2_peripherals_setup(void);
 void clo2_peripherals_machine(void);
 
 void clo2_peripheral_prep_state(void);
