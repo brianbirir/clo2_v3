@@ -237,7 +237,7 @@ String extract_command(String _raw_command)
     if( __new_prep_time ) // only update if the new oreo time is valid
     {
       // update prep time here
-      prep_time = __new_prep_time  * ONE_MIN;
+      prep_time = __new_prep_time  * ONE_SECOND;
       String _time = String(__new_prep_time);
       _buffer = build_payload( update_prep_time, _time );
       _payload_resp.concat( _buffer );
@@ -254,7 +254,7 @@ String extract_command(String _raw_command)
     if( __new_chlorination_time ) // only update if the new oreo time is valid
     {
       // update chlorination time here
-      chlorination_time = __new_chlorination_time * ONE_MIN; //TODO: restore this
+      chlorination_time = __new_chlorination_time * ONE_SECOND;
       String _time = String(__new_chlorination_time);
       _buffer = build_payload( update_chlorination_time, _time );
       _payload_resp.concat( _buffer );
