@@ -24,7 +24,7 @@ uint8_t button_counter;
 uint8_t actionable_button_counter;
 // buzzer
 #define buzzer_pin D8
-volatile bool buzzing_state;
+volatile bool buzz_continuously;
 unsigned long buzzer_timer;
 unsigned long buzzer_period = 100; //One second
 static int buzzer_counter;
@@ -74,7 +74,7 @@ void clo2_peripherals_machine(void)
 
 void clo2_peripheral_prep_state(void)
 {
-  buzzing_state = true;
+  buzz_continuously = false;
   buzzer_counter = 4;
   clo2_peripherals_reset_fans();
   pixel_period = TWO_SECONDS;
@@ -82,22 +82,21 @@ void clo2_peripheral_prep_state(void)
 
 void clo2_peripheral_chlorination_state(void)
 {
-  buzzing_state = true;
-  buzzer_counter = 4;
+  buzz_continuously = true;
   clo2_peripherals_set_fans();
   pixel_period = ALWAYS_ON;
 }
 
 void clo2_peripheral_aftermath_state(void)
 {
-  buzzing_state = false;
+  buzz_continuously = false;
   clo2_peripherals_reset_fans();
   pixel_period = HALF_A_SECOND;
 }
 
 void clo2_peripheral_idle_state(void)
 {
-  buzzing_state = false;
+  buzz_continuously = false;
   clo2_peripherals_reset_fans();
   pixel_period = HALF_A_SECOND;
 }
@@ -108,28 +107,42 @@ void clo2_peripherals_setup_buzzer(void)
 {
   pinMode(buzzer_pin, OUTPUT);
   digitalWrite(buzzer_pin, true);
-  buzzing_state = false;
-  buzzer_counter = false;
+  buzz_continuously = false;
+  buzzer_counter = 0;
   buzzer_timer = 0;
 }
 
 void clo2_peripherals_buzzer_handle(void)
 {
-    if(buzzing_state) {
-        if((millis() - buzzer_timer) > buzzer_period) {
-            digitalWrite(buzzer_pin, !digitalRead(buzzer_pin));
-            buzzer_counter--;
-            buzzer_timer = millis();
-        }
-        if(buzzer_counter <= 0) {
-            digitalWrite(buzzer_pin, true);
-            buzzing_state = false;
-        }
+  // buzz continuously
+  if(buzz_continuously)
+  { 
+    if((millis() - buzzer_timer) > buzzer_period)
+    {
+      digitalWrite(buzzer_pin, !digitalRead(buzzer_pin));
+      // reset buzzer timer
+      buzzer_timer = millis(); 
+    }
+  }
+
+  // buzz based on counter
+  else
+  {
+    if ( buzzer_counter > 0 )
+    {
+      if((millis() - buzzer_timer) > buzzer_period)
+      {
+        digitalWrite(buzzer_pin, !digitalRead(buzzer_pin));
+        buzzer_counter--;
+        // reset buzzer timer
+        buzzer_timer = millis(); 
+      }      
     }
     else
     {
-      digitalWrite(buzzer_pin, true); // keep buzzer off
+      digitalWrite(buzzer_pin, true);
     }
+  }
 }
 /* end of buzzer */
 
@@ -233,7 +246,6 @@ void clo2_peripherals_action_button_press(void)
       current_system_state = !current_system_state; 
       current_trigger_source = TRIG_BUTTON;
       buzzer_counter = 4;
-      buzzing_state = true;
       actionable_button_counter = 0; // reset actionable counter to zero
 #ifdef DEBUG_CLO2_PERIPHERALS
       serial_debug_print("System state: ");
